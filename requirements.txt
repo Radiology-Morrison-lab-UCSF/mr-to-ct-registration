@@ -1,2 +1,3 @@
 wheel
 antspyx==0.3.8
+simpleitk==2.3.0
