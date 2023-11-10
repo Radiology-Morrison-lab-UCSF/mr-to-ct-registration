@@ -6,6 +6,9 @@ class ImageGetter:
         if type(locationOrImage) is str:
             self.location = locationOrImage
             self.cached = None
+        if type(locationOrImage) is ImageGetter:
+            self.location = locationOrImage.location
+            self.cached = locationOrImage.cached
         else:
             self.location = None
             self.cached = locationOrImage

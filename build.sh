@@ -27,3 +27,12 @@ rm antspyx-0.3.8-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 
 #python3 -m pip install --upgrade pip
 python3.9 -m pip install -r requirements.txt
+
+# HD-BET
+git clone https://github.com/MIC-DKFZ/HD-BET
+mv HD-BET HD_BET
+cd HD_BET
+touch __init__.py
+echo "folder_with_parameter_files = os.path.join('`pwd`', 'hd-bet_params') # Override by Lee" >> HD_BET/paths.py
+python3.9 -m pip install -e .
+cd ..

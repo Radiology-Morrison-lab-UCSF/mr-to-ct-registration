@@ -1,7 +1,7 @@
-import os
+import subprocess
 import SimpleITK as sitk
 from ImageGetter import ImageGetter
-from filelocations import FileLocations_LeGui, FileLocations_fMRIPrep, FileLocations_LeGuiToFMRI
+from SkullStripper import SkullStripper
 
 class RegMRToCTPipeline:
 
@@ -10,12 +10,19 @@ class RegMRToCTPipeline:
         self.ctGetter = ImageGetter(ctImgOrLocation)
 
     def Run(self):
-        ctBrainMask = self.ApproximateCTBrainMask()
+        mrBrainMask = SkullStripper(self.mrGetter).CalcBrainmask()
 
-        sitk.WriteImage(ctBrainMask, "/home/lreid/temp/temp.nii.gz", useCompression=True, imageIO="NiftiImageIO")
+        sitk.WriteImage(mrBrainMask, "/home/lreid/temp/temp.nii.gz", useCompression=True, imageIO="NiftiImageIO")
+
+        #ctBrainMask = self.ApproximateCTBrainMask()
+
+        #sitk.WriteImage(ctBrainMask, "/home/lreid/temp/temp.nii.gz", useCompression=True, imageIO="NiftiImageIO")
 
         raise Exception("Incomplete")
     
+    
+
+
     def ApproximateCTBrainMask(self) -> sitk.Image:
         # Houndsfield units for a CT:
         # GM: 37 - 45
