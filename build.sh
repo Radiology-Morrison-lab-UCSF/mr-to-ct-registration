@@ -30,8 +30,8 @@ python3.9 -m pip install -r requirements.txt
 
 # HD-BET
 git clone https://github.com/MIC-DKFZ/HD-BET
-mv HD-BET HD_BET
-cd HD_BET
+mv HD-BET HDBET
+cd HDBET
 touch __init__.py
 echo "folder_with_parameter_files = os.path.join('`pwd`', 'hd-bet_params') # Override by Lee" >> HD_BET/paths.py
 python3.9 -m pip install -e .

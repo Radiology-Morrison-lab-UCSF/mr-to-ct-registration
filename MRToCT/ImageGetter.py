@@ -6,7 +6,7 @@ class ImageGetter:
         if type(locationOrImage) is str:
             self.location = locationOrImage
             self.cached = None
-        if type(locationOrImage) is ImageGetter:
+        elif type(locationOrImage) is ImageGetter:
             self.location = locationOrImage.location
             self.cached = locationOrImage.cached
         else:
@@ -14,7 +14,7 @@ class ImageGetter:
             self.cached = locationOrImage
 
 
-    def GetImage(self):
+    def GetImage(self) -> sitk.Image:
         '''
         Returns an image from file
         '''
