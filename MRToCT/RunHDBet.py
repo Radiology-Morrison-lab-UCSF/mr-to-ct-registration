@@ -1,6 +1,8 @@
 from typing import List
-import HDBET.HD_BET.run
+import torch # Fix weird issue that causes crash when run imported
+from HD_BET.run import run_hd_bet
 import tempfile
+
 
 def RunHDBet_CPU(input_files:[str, List[str]], mode:str = 'fast', tta=False):
     '''Helper method to call HD bet using the CPU. Returns the mask'''
@@ -10,13 +12,13 @@ def RunHDBet_CPU(input_files:[str, List[str]], mode:str = 'fast', tta=False):
     
     loc_out = tempfile.mktemp(suffix="nii.gz")
 
-    return HDBET.HD_BET.run.run_hd_bet(input_files, 
-                                       loc_out, 
-                                       mode, 
-                                       config_file=None, 
-                                       device='cpu', 
-                                       postprocess=True, 
-                                       do_tta=tta, 
-                                       keep_mask=False, 
-                                       overwrite=True, 
-                                       bet=False)[0]
+    return run_hd_bet(input_files, 
+                        loc_out, 
+                        mode, 
+                        config_file=None, 
+                        device='cpu', 
+                        postprocess=True, 
+                        do_tta=tta, 
+                        keep_mask=False, 
+                        overwrite=True, 
+                        bet=False)[0]

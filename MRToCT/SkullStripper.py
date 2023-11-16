@@ -1,5 +1,5 @@
 from . import RunHDBet
-from .ImageGetter import ImageGetter
+from PythonUtils.ImageGetter import ImageGetter
 from .IO import WriteImageIfPathProvided
 import SimpleITK as sitk
 import os

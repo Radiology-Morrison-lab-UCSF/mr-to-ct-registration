@@ -160,5 +160,7 @@ cython_debug/
 #.idea/
 
 
-# HD-BET is added when build is called
+# HD-BET and PythonUtils are added when build is called
 HD_BET/
+PythonUtils/
+HDBET

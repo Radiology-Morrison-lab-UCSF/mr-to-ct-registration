@@ -1,11 +1,14 @@
 import subprocess
 import SimpleITK as sitk
 import os
+import shutil
+import tempfile
 import numpy as np
-from .ImageGetter import ImageGetter
+from PythonUtils.ImageGetter import ImageGetter
 from .SkullStripper import SkullStripper
 from .IO import WriteImageIfPathProvided
 from .Resolution import MMToSimpleITKKernel
+import ants
 
 class RegMRToCTPipeline:
 
@@ -19,8 +22,14 @@ class RegMRToCTPipeline:
         self.dir_output = dir_output
         self.loc_mr_brainmask = os.path.join(self.dir_output, prefix + "mr_brainmask.nii.gz")
         self.loc_ct_brainmask = os.path.join(self.dir_output, prefix + "ct_brainmask.nii.gz")
+        self.loc_mr_brainmask_smoothed = os.path.join(self.dir_output, prefix + "mr_brainmas_smoothed.nii.gz")
+        self.loc_ct_brainmask_smoothed = os.path.join(self.dir_output, prefix + "ct_brainmask_smoothed.nii.gz")
         self.loc_mr_skull = os.path.join(self.dir_output, prefix + "mr_skull.nii.gz")
         self.loc_ct_skull = os.path.join(self.dir_output, prefix + "ct_skull.nii.gz")
+        self.loc_transform = os.path.join(self.dir_output, prefix + "mr2ct.mat")
+        self.loc_mrInCTSpace = os.path.join(self.dir_output, prefix + "mr_inCTSpace.nii.gz")
+        self.loc_ctInMRSpace = os.path.join(self.dir_output, prefix + "ct_inMRSpace.nii.gz")
+
 
     def Run(self):
 
@@ -32,8 +41,70 @@ class RegMRToCTPipeline:
         mrSkullMask = self.ApproximateMRSkull(mrBrainMask)
         ctSkullMask = self.ApproximateCTSkull(ctBrainMask)
 
+        self.SmoothAndRegister(ctSkullMask, mrSkullMask)
+        
+        self.ApplyTransforms()
 
-        raise Exception("Incomplete - run registration between skulls")
+
+    def ApplyTransforms(self):
+        loc_mr = self.mrGetter.location
+        if loc_mr is None:
+            raise Exception("Not implemented - save mr to disk for ants to read")
+
+        loc_ct = self.mrGetter.location
+        if loc_ct is None:
+            raise Exception("Not implemented - save ct to disk for ants to read")
+
+        self.ApplyTransform(loc_ct, loc_mr, False, self.loc_mrInCTSpace)
+        self.ApplyTransform(loc_mr, loc_ct, True, self.loc_ctInMRSpace)
+
+
+    def ApplyTransform(self, loc_fixed, loc_moving, inverse, loc_saveTo):
+        if os.path.exists(loc_saveTo):
+           print(loc_saveTo, "found. Transform not applied") 
+        else:
+            
+            transformed = ants.apply_transforms(ants.image_read(loc_fixed), ants.image_read(loc_moving), [self.loc_transform], whichtoinvert=[inverse])
+            ants.image_write(transformed, loc_saveTo)
+
+
+    def SmoothAndRegister(self, fixed:sitk.Image, moving:sitk.Image):
+        try:
+            if os.path.exists(self.loc_transform):
+                print("Transform found. Registration skipped")
+                return ants.read_transform(self.loc_transform)
+        except:
+            print("Transform could not be opened. Rerunning registration")
+            pass
+
+
+        fixedSmoothed = sitk.SmoothingRecursiveGaussian(fixed)
+        movingSmoothed = sitk.SmoothingRecursiveGaussian(moving)
+
+        sitk.WriteImage(fixedSmoothed, self.loc_ct_brainmask_smoothed)
+        sitk.WriteImage(movingSmoothed, self.loc_mr_brainmask_smoothed)
+
+        return self.Register(self.loc_ct_brainmask_smoothed, self.loc_mr_brainmask_smoothed, self.loc_transform)
+
+        
+    def Register(self, loc_fixed:str, loc_moving:str, saveTo:str):
+                
+        # Generate the transform
+        fixed = ants.image_read(loc_fixed)
+        moving = ants.image_read(loc_moving)
+
+        print("Running registration")
+        transform = ants.registration(fixed=fixed, 
+                                        moving=moving, 
+                                        type_of_transform="Rigid", 
+                                        aff_shrink_factors=(8,6,4,1), 
+                                        aff_smoothing_sigmas=(3,2,1,0), 
+                                        aff_iterations=(1000,1000,500,100), 
+                                        verbose=True)
+        print("Registration complete")
+        fwdTransform = transform['fwdtransforms'][0]
+        shutil.copyfile(fwdTransform, saveTo)
+        return fwdTransform
     
 
     def ApproximateMRSkull(self, mrBrainMask:sitk.Image):
@@ -111,89 +182,3 @@ class RegMRToCTPipeline:
 
             WriteImageIfPathProvided(skull, self.loc_ct_skull)
         return skull
-
-
-    # def ApproximateCTBrainMask(self) -> sitk.Image:
-    #     # Houndsfield units for a CT:
-    #     # GM: 37 - 45
-    #     # WM: 20 - 30
-    #     # Water: 0
-    #     # Bone: 700 - 3000
-    #     # The artefacts we see have very large numbers, usually
-
-    #     # Find tissues, roughly
-    #     ct = self.ctGetter.GetImage()
-    #     ct_downsampled = self.Resample(ct, [int(x/4) for x in ct.GetSize()])
-
-
-    #     ct_GmWm = (ct_downsampled > 20) * (ct_downsampled < 45)
-    #     ct_water = ct_downsampled == 0
-    #     ct_skull = (ct_downsampled >= 700) * (ct_downsampled < 2000)
-
-
-    #     # # fill the skull
-    #     # roughhead = ct_skull
-    #     # #roughhead = sitk.BinaryErode(roughhead, kernelRadius=[2,2,2])
-    #     # for i in range(20):
-    #     #     print(i)
-    #     #     #roughhead = f.Execute(roughhead)
-    #     #     roughhead = sitk.BinaryErode(sitk.BinaryDilate(roughhead, kernelRadius=[10,10,10]), kernelRadius=[10,10,10])
-    #     #     sitk.WriteImage(roughhead, "/home/lreid/temp/roughhead"+str(i)+".nii.gz", useCompression=True, imageIO="NiftiImageIO")
-
-
-    #     # Keep gm/wm and water within the GM/WM areas
-    #     kernel = [1,1,1]
-    #     roughBrain = sitk.BinaryDilate(ct_GmWm, kernelRadius=[3,3,3])
-    #     roughBrain = ct_water * roughBrain + ct_GmWm
-    #     roughBrain = sitk.BinaryDilate(sitk.BinaryErode(roughBrain, kernelRadius=kernel), kernelRadius=kernel) # remove 1-voxel bits 
-    #     kernel = [3,3,3]
-    #     for i in range(10):
-    #         roughBrain = sitk.BinaryErode(sitk.BinaryDilate(roughBrain, kernelRadius=kernel), kernelRadius=kernel) # join bits
-
-        
-
-    #     sitk.WriteImage(roughBrain, "/home/lreid/temp/roughbrain.nii.gz", useCompression=True, imageIO="NiftiImageIO")
-
-
-    #     # Find islands
-    #     f = sitk.ConnectedComponentImageFilter()
-    #     islands = f.Execute(roughBrain)
-    #     objCount = f.GetObjectCount()
-
-    #     sitk.WriteImage(islands, "/home/lreid/temp/islands.nii.gz", useCompression=True, imageIO="NiftiImageIO")
-
-    #     # Keep the biggest one
-    #     maxSize = 0
-    #     maxLabel = -1
-    #     print("Found: ", objCount+1)
-    #     for labl in range(1,objCount+1):
-    #         filt = sitk.StatisticsImageFilter()
-    #         filt.Execute(islands == labl)
-    #         voxCount = filt.GetSum()
-    #         print(labl, " size: ", voxCount)
-
-    #         if voxCount > maxSize:
-    #             maxLabel = labl
-    #             maxSize = voxCount
-
-    #     finalDownsampled = islands == maxLabel
-    #     return self.Resample(finalDownsampled, ct.GetSize())
-    # def Resample(self, img:sitk.Image, new_size) -> sitk.Image:
-    #     # The spatial definition of the images we want to use in a deep learning framework (smaller than the original).
-        
-    #     reference_image = sitk.Image(new_size, img.GetPixelIDValue())
-    #     reference_image.SetOrigin(img.GetOrigin())
-    #     reference_image.SetDirection(img.GetDirection())
-    #     reference_image.SetSpacing(
-    #         [
-    #             sz * spc / nsz
-    #             for nsz, sz, spc in zip(new_size, img.GetSize(), img.GetSpacing())
-    #         ]
-    #     )
-
-    #     return sitk.Resample(img, reference_image)
-
-
-
-pipeline = RegMRToCTPipeline("/home/lreid/temp/MR.nii", "/home/lreid/temp/CT.nii", "/home/lreid/temp/reg/")
-pipeline.Run()
