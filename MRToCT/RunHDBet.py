@@ -6,6 +6,16 @@ import tempfile
 
 def RunHDBet_CPU(input_files:[str, List[str]], mode:str = 'fast', tta=False):
     '''Helper method to call HD bet using the CPU. Returns the mask'''
+    return RunHDBet(input_files, 'cpu', mode,tta)
+
+
+def RunHDBet_GPU(input_files:[str, List[str]], mode:str = 'accurate', tta=True):
+    '''Helper method to call HD bet using the GPU. Returns the mask'''
+    return RunHDBet(input_files, 'gpu', mode,tta)
+
+
+def RunHDBet(input_files:[str, List[str]], device, mode:str = 'fast', tta=False):
+    '''Helper method to call HD bet using the CPU. Returns the mask'''
 
     if mode != "fast" and mode != "accurate":
         raise Exception("Bad mode " + mode)
@@ -16,7 +26,7 @@ def RunHDBet_CPU(input_files:[str, List[str]], mode:str = 'fast', tta=False):
                         loc_out, 
                         mode, 
                         config_file=None, 
-                        device='cpu', 
+                        device=device, 
                         postprocess=True, 
                         do_tta=tta, 
                         keep_mask=False, 

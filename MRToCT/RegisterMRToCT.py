@@ -1,18 +1,21 @@
-import subprocess
 import SimpleITK as sitk
 import os
 import shutil
-import tempfile
 import numpy as np
 from PythonUtils.ImageGetter import ImageGetter
 from .SkullStripper import SkullStripper
-from .IO import WriteImageIfPathProvided
+from PythonUtils.IO import WriteImageIfPathProvided
 from .Resolution import MMToSimpleITKKernel
+from PythonUtils.OSUtils import AllExist
 import ants
 
-class RegMRToCTPipeline:
 
-    def __init__(self, mrImgOrLocation, ctImgOrLocation, dir_output, prefix = "mr_to_ct_"):
+class RegisterMRToCTPipeline:
+    '''
+    Registers a provided T1 to a provided CT
+    '''
+
+    def __init__(self, mrImgOrLocation, ctImgOrLocation, dir_output, prefix = "mr_to_ct_", useGPU = False, applyN4Correction=True):
         '''
         
         :mrImgOrLocation: Should point to a T1. Supply a string, Image, or ImageGetter
@@ -22,18 +25,26 @@ class RegMRToCTPipeline:
         self.dir_output = dir_output
         self.loc_mr_brainmask = os.path.join(self.dir_output, prefix + "mr_brainmask.nii.gz")
         self.loc_ct_brainmask = os.path.join(self.dir_output, prefix + "ct_brainmask.nii.gz")
-        self.loc_mr_brainmask_smoothed = os.path.join(self.dir_output, prefix + "mr_brainmas_smoothed.nii.gz")
+        self.loc_mr_brainmask_smoothed = os.path.join(self.dir_output, prefix + "mr_brainmask_smoothed.nii.gz")
         self.loc_ct_brainmask_smoothed = os.path.join(self.dir_output, prefix + "ct_brainmask_smoothed.nii.gz")
         self.loc_mr_skull = os.path.join(self.dir_output, prefix + "mr_skull.nii.gz")
         self.loc_ct_skull = os.path.join(self.dir_output, prefix + "ct_skull.nii.gz")
-        self.loc_transform = os.path.join(self.dir_output, prefix + "mr2ct.mat")
+        self.loc_transform = os.path.join(self.dir_output, prefix + "mr_to_ct.mat")
         self.loc_mrInCTSpace = os.path.join(self.dir_output, prefix + "mr_inCTSpace.nii.gz")
         self.loc_ctInMRSpace = os.path.join(self.dir_output, prefix + "ct_inMRSpace.nii.gz")
+        self.loc_mr_n4Corrected = os.path.join(self.dir_output, prefix + "mr_biasCorrected.nii.gz")
+        self.applyN4Correction = applyN4Correction
+        self.useGPU = useGPU
 
 
     def Run(self):
+        '''
+        Runs the pipeline
+        '''
 
         os.makedirs(self.dir_output, exist_ok=True)
+
+        self.BiasCorrectIfApplicable()
 
         mrBrainMask = SkullStripper(self.mrGetter).CalcBrainmask(self.loc_mr_brainmask)
         ctBrainMask = SkullStripper(self.ctGetter).CalcBrainmask(self.loc_ct_brainmask)
@@ -46,7 +57,18 @@ class RegMRToCTPipeline:
         self.ApplyTransforms()
 
 
+    def BiasCorrectIfApplicable(self):
+        '''
+        Bias corrects the MR if the setting is turned on
+        '''
+        if self.applyN4Correction:
+            if not os.path.exists(self.loc_mr_n4Corrected):
+                ants.image_write(ants.n4_bias_field_correction(ants.image_read(self.mrGetter.location), rescale_intensities=False), self.loc_mr_n4Corrected)
+            self.mrGetter = ImageGetter(self.loc_mr_n4Corrected)
+
+
     def ApplyTransforms(self):
+        print("Applying transforms")
         loc_mr = self.mrGetter.location
         if loc_mr is None:
             raise Exception("Not implemented - save mr to disk for ants to read")
@@ -71,7 +93,7 @@ class RegMRToCTPipeline:
     def SmoothAndRegister(self, fixed:sitk.Image, moving:sitk.Image):
         try:
             if os.path.exists(self.loc_transform):
-                print("Transform found. Registration skipped")
+                print("Transforms found. Registration skipped")
                 return ants.read_transform(self.loc_transform)
         except:
             print("Transform could not be opened. Rerunning registration")
@@ -104,6 +126,7 @@ class RegMRToCTPipeline:
         print("Registration complete")
         fwdTransform = transform['fwdtransforms'][0]
         shutil.copyfile(fwdTransform, saveTo)
+        # NB the invtransform is actually the same as the fwdtransform for some reason
         return fwdTransform
     
 

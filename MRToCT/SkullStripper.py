@@ -1,14 +1,15 @@
 from . import RunHDBet
 from PythonUtils.ImageGetter import ImageGetter
-from .IO import WriteImageIfPathProvided
+from PythonUtils.IO import WriteImageIfPathProvided
 import SimpleITK as sitk
 import os
 import tempfile
 
 
 class SkullStripper:
-    def __init__(self, mrImgOrLocation):
+    def __init__(self, mrImgOrLocation, useGPU = False):
         self.mrGetter = ImageGetter(mrImgOrLocation)
+        self.useGPU = useGPU
 
 
     def CalcBrainmask(self, loc_saveTo=None)  -> sitk.Image:
@@ -26,8 +27,10 @@ class SkullStripper:
             loc_in = tempfile.mktemp(suffix="nii")
             sitk.WriteImage(self.mrGetter.GetImage(), loc_in)
 
-        
-        mask = RunHDBet.RunHDBet_CPU(loc_in)
+        if self.useGPU:
+            mask = RunHDBet.RunHDBet_GPU(loc_in)
+        else:
+            mask = RunHDBet.RunHDBet_CPU(loc_in)
         
         WriteImageIfPathProvided(mask, loc_saveTo)
 
