@@ -1,21 +1,24 @@
 #!/bin/bash
 # Run like so:
 # bash /full-path-to/main_batch.sh 'full-path-to-your-data-containing-subjects'
-
+set -e
 SCRIPT_DIR=$(dirname $0)
 dir_top=$1/
 directoryCount=$(find $dir_top -mindepth 1 -maxdepth 1 -type d | wc -l)
+# Convert to zero index
+lastDirNo=$(($directoryCount - 1))
 
 noCPUs=8
 
 sbatch <<EOT
 #!/bin/bash
-#SBATCH --array=0-$directoryCount
+#SBATCH --array=0-$lastDirNo
 #SBATCH --time=00:59:59
-#SBATCH --partition=short
 #SBATCH --cpus-per-task=$noCPUs
 #SBATCH --mem=16gb
 #SBATCH --nodes=1
+#SBATCH --parition=gpu
+#SBATCH --gpus=1
 #SBATCH -D $dir_top
 
 set -e

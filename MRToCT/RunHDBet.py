@@ -11,7 +11,7 @@ def RunHDBet_CPU(input_files:[str, List[str]], mode:str = 'fast', tta=False):
 
 def RunHDBet_GPU(input_files:[str, List[str]], mode:str = 'accurate', tta=True):
     '''Helper method to call HD bet using the GPU. Returns the mask'''
-    return RunHDBet(input_files, 'gpu', mode,tta)
+    return RunHDBet(input_files, 0, mode,tta)
 
 
 def RunHDBet(input_files:[str, List[str]], device, mode:str = 'fast', tta=False):
@@ -21,7 +21,7 @@ def RunHDBet(input_files:[str, List[str]], device, mode:str = 'fast', tta=False)
         raise Exception("Bad mode " + mode)
     
     loc_out = tempfile.mktemp(suffix="nii.gz")
-
+    print("device:", device)
     return run_hd_bet(input_files, 
                         loc_out, 
                         mode, 

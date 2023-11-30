@@ -1,5 +1,4 @@
 import PythonUtils.HDF5
-from MRToCT.RegisterMRToCT import RegisterMRToCTPipeline
 from PythonUtils.IO import WriteTextFile
 from PythonUtils.ImageGetter import ImageGetter
 from PythonUtils.OSUtils import AllExist, GetFilename
@@ -9,6 +8,7 @@ import os
 import shutil
 import tempfile
 from .LeGuiFileLocations import LeGuiFileLocations
+from .RegisterMRToCTPipeline import RegisterMRToCTPipeline
 
 
 class FixLeguiRegistration:

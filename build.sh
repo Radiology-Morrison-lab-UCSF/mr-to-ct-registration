@@ -41,11 +41,9 @@ fi
 PythonUtils/build.sh
 
 
-# # HD-BET
-# git clone git@git.ucsf.edu:lee-reid/HD-BET-for-python.git HDBET
-# cd HDBET
-# touch __init__.py
-# echo "folder_with_parameter_files = os.path.join('`pwd`', 'hd-bet_params') # Override by Lee" >> HDBET/paths.py
-# python3.9 -m pip install -e .
-# cd ..
+# HD-BET
+if [ ! -d "HDBET" ]; then
+    git clone git@git.ucsf.edu:lee-reid/HD-BET-for-python.git HDBET
+fi
 
+HDBET/build.sh
