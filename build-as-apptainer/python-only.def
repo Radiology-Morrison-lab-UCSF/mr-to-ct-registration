@@ -1,0 +1,30 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%setup
+    mkdir ${SINGULARITY_ROOTFS}/usr/local/python3.10/
+    mkdir ${SINGULARITY_ROOTFS}/data
+    mkdir ${SINGULARITY_ROOTFS}/script
+
+%files
+    
+
+%environment
+
+%post
+    cd /script/
+    rm -rf env
+    ls -a .
+    apt-get update
+    apt-get install python3.10 python3.10-dev python3-pip python3.10-venv wget -y
+    
+    
+%runscript
+    #!/bin/bash
+    
+    cd /script/
+    
+    source /script/env/bin/activate
+
+    /usr/local/python3.10/python3.10 -m main "$@"
+    

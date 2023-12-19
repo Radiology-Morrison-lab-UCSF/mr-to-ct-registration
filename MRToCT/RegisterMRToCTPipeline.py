@@ -1,5 +1,5 @@
 from .Resolution import MMToSimpleITKKernel
-from .SkullStripper import SkullStripper
+from PythonUtils.SkullStripper import SkullStripper
 from PythonUtils.IO import WriteImageIfPathProvided
 from PythonUtils.ImageGetter import ImageGetter
 import SimpleITK as sitk

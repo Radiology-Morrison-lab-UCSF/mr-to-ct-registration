@@ -166,3 +166,5 @@ PythonUtils/
 HDBET
 temp.dist/*
 temp.build/*
+.nuitka-env
+*.sif

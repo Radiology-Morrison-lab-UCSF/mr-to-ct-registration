@@ -1,5 +1,4 @@
-from .RegisterMRToCTPipeline import RegisterMRToCTPipeline
-from PythonUtils.OSUtils import AllExist
+from MRToCT.RegisterMRToCTPipeline import RegisterMRToCTPipeline
 import argparse
 
 
