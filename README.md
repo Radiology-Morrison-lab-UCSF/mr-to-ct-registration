@@ -6,6 +6,8 @@ It contains two main entry points. One to fix legui, another to run a MR to CT r
 
 ## Building
 
+You only need to do this once!
+
 ## Cluster, no Python 3.9 available
 
 This requires Python 3.9 or later. To run this on the cluster, where this is not available, it's easiest to
@@ -18,8 +20,6 @@ To build the image:
 
 1. `cd` to the top directory of this solution
 1. In bash: `build-as-apptainer/build-python-only.sh`
-
-You only need to do this once!
 
 
 ### With Python 3.9 or later available
