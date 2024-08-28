@@ -8,7 +8,7 @@ It contains two main entry points. One to fix legui, another to run a MR to CT r
 
 You only need to do this once!
 
-## Cluster, no Python 3.9 available
+### Cluster, no Python 3.9 available
 
 This requires Python 3.9 or later. To run this on the cluster, where this is not available, it's easiest to
 
@@ -30,12 +30,12 @@ Build the environment (once only)
 
 ## Running
 
-## Register MR to CT
-### Cluster, no Python 3.9 available
+### Register MR to CT
+#### Cluster, no Python 3.9 available
 
 `./RegisterMRToCT.sh --t1 path-to-your-t1.nii --ct path-to-your-ct.nii --out path-to-a-directory-to-save-to`
 
-### With Python 3.9 or 3.10 available
+#### With Python 3.9 or 3.10 available
 
 ```
 # Activate once per session
@@ -49,11 +49,11 @@ env/bin/python3.10 -m RegisterMRToCT
 
 Check `main.sh` and `main.py` for details
 
-### Cluster, no Python 3.9 available
+#### Cluster, no Python 3.9 available
 
 Not implemented.
 
-### With Python 3.9 available
+#### With Python 3.9 available
 
 `./main.sh /directory/containing/legui/folder /path/to/t1`
 

@@ -16,4 +16,5 @@ pipeline = FixLeguiRegistration(args.loc_t1,
                                 args.dir_legui, 
                                 args.dir_out,
                                 useGPU=args.gpu)
+pipeline.keepIntermediates = True
 pipeline.Run()

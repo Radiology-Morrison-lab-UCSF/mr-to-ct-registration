@@ -16,6 +16,6 @@ export PATH=$PATH:"/netopt/rhel7/versions/cuda/cuda-11.2/bin/"
 export PATH=$PATH:"/netopt/rhel7/versions/cuda/cuda-11.2/lib64/"
 
 
-python3.9 -m main --legui $dirTop \
+python3.10 -m main --legui $dirTop \
                   --t1 $locT1 \
                   --out $dirTop/fixed_legui/
